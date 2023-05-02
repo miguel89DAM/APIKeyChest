@@ -1,0 +1,13 @@
+const {google} = require('googleapis');
+const fs = require('fs');
+const path = require('path');
+const process = require('process');
+const {authenticate} = require('@google-cloud/local-auth');
+
+const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+const TOKEN_PATH = path.join(process.cwd(), 'token.json');
+const CREDENTIALS_PATH = path.join(process.cwd(), '../certificates/credentials.json');
+const sender = google.gmail({
+    version: 'v3',
+    auth: 'AIzaSyBCj838XHd_PThfPzNdNE7BVfu_vd6Ukxc'
+});
