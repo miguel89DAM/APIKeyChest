@@ -119,7 +119,7 @@ const verifyUser = async (req=request, res=response) => {
             //Generamos el token y lo ingresamos en la BD
             const token = await generateJWT( insertUser[0][0].id );
             await conn.query(`CALL BKEYCHEST.sp_insertToken(?,?)`,[insertUser[0][0].id,token]);
-            //await sendEmail(email,token);
+            await sendEmail(email,token);
             res.status(200).json(insertUser[0][0].id);
         }catch(error){
              //console.log(error);
