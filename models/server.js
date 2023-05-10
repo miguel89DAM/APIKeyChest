@@ -13,7 +13,8 @@ class Server{
 
         this.paths={
             users: '/users',
-            categories: '/categories'
+            categories: '/categories',
+            data: '/data'
         }
 
         this.midlewares();
@@ -31,6 +32,7 @@ class Server{
     routes(){
         this.app.use(this.paths.users, require('../routes/user'));
         this.app.use(this.paths.categories, require('../routes/categories'));
+        this.app.use(this.paths.data, require('../routes/data'));
     }
 
     listen(){
