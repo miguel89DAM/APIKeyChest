@@ -16,10 +16,10 @@ function encryptPassword(textPlain){
 }
 
 
-const generateJWT = ( uid = '' ) => {
+const generateJWT = ( uid = '',email='',passwd='' ) => {
 
     return new Promise( (resolve, reject) => {
-        const payload = { uid };
+        const payload = { uid,email,passwd };
         jwt.sign( payload, process.env.SECRETORPRIVATEKEY, {
             expiresIn: '2h'
         }, ( err, token ) => {

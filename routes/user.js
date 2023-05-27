@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 dotenv.config();
 const {validarCampos}=require('../middlewares/validar-campos');
 const{validarEmail}=require('../middlewares/validar-email');
-const {verifyUser,postGetUser,insertUser,prueba} = require('../controllers/user');
+const {verifyUser,postGetUser,insertUser,recoverAccount,verifyRecoveryAccount,prueba} = require('../controllers/user');
 
 
 const router = Router();
@@ -13,6 +13,8 @@ const router = Router();
 router.get('/prueba',prueba);
 
 router.get('/verify/:token',verifyUser);
+
+router.get('/recovery/:token',verifyRecoveryAccount);
 
 router.post('/user',[
     check('email','The email can\'t be empty').not().isEmpty(),
@@ -32,6 +34,6 @@ router.post('/newUser',[
 ],
 insertUser);
 
-
+router.post('/recovery',recoverAccount);
 
 module.exports = router;

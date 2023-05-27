@@ -47,6 +47,44 @@ const verifyUser = async (req=request, res=response) => {
         if(conn) conn.end();
     }
 };
+/**
+ *  Método GET que verifica la peticion de olvido de contraseña por un usuario
+ * @param {*} req 
+ * @param {*} res 
+ * @returns 
+ */
+const verifyRecoveryAccount=async(req=request,res=response)=>{
+    const {token} = req.params;            
+    let conn;
+    try{        
+        const veryToken = await verifyJWT(token);   
+        const {uid,email,passwd} =veryToken; 
+        conn = await fetchConn();
+        //Eliminar datos del usuario
+        const resultDeleteData=await conn.query(`CALL BKEYCHEST.sp_deleteDataByUser(?);`,[email]);
+        //Cifrado de contraseña
+        const password = encryptPassword(passwd);
+        if(password === null){
+            res.status(500).json({msg:"Error: Unexpected error. Try again"});
+            return;
+        }
+        //Creación de masterPassword
+        const randomString = generateRandomString(15);            
+        const masterkey =await encryptData(randomString,passwd);
+        //Actualizacion del usuario en la BD
+        const updateUser=await conn.query(`CALL BKEYCHEST.sp_updateUser(?,?,?)`,[email,password,masterkey]);
+        //Si la contraseña no se ha modificado retornamos error
+        if(updateUser.affectedRows == 0){
+            res.status(400).json({msg:"Error: The user has not been modificated"});
+            return;
+        }
+        res.status(200).json(updateUser.affectedRows);
+    }catch(error){
+        res.status(500).json({msg:"Error: "+ error.message});   
+    }finally{
+        if(conn) conn.end();
+    }
+}
     /**
      * Controlador POST que realiza el login del usuario
      * @param {*} req 
@@ -119,7 +157,12 @@ const verifyUser = async (req=request, res=response) => {
             //Generamos el token y lo ingresamos en la BD
             const token = await generateJWT( insertUser[0][0].id );
             await conn.query(`CALL BKEYCHEST.sp_insertToken(?,?)`,[insertUser[0][0].id,token]);
-            await sendEmail(email,token);
+            const body=`Hi! There, You have recently visited 
+            our website and entered your email.
+            Please follow the given link to verify your email
+            https://www.keychest.org:3300/users/verify/${token} 
+            Thanks`;
+            await sendEmail(email,token,body);
             res.status(200).json(insertUser[0][0].id);
         }catch(error){
              //console.log(error);
@@ -128,10 +171,52 @@ const verifyUser = async (req=request, res=response) => {
             if(conn) conn.end();
         }
     }
+    /**
+     * Peticion que realiza el usuario cuando olvida la contraseña
+     * @param {*} req 
+     * @param {*} res 
+     * @returns 
+     */
+    const recoverAccount=async (req=request,res=response)=>{
+        console.log(req.body)
+        const {email="Nobody", passwd="Nopass"}= req.body; 
+        let conn;
+        try{
+            conn = await fetchConn();
+            //Comprobación de que el email existe o no en la BD
+            const results=await conn.query(`SELECT BKEYCHEST.fn_check_user_if_exists(?) AS checkUser;`,[email]);            
+            if(!results[0].checkUser){
+                res.status(400).json({msg:"Error: The user is not register"});
+                return;
+            }
+            const token = await generateJWT("", email,passwd );
+            const body=`Hi! There, You have recently visited 
+            our website and entered your email.
+            Please follow the given link to verify your email
+            https://www.keychest.org:3300/users/recovery/${token} 
+            Thanks`;
+            //Control de la respuesta de envio de email
+            const resultEmail =await sendEmail(email,token,body);
+            if(resultEmail.response.status == 400){
+                res.status(400).json({msg:"Error sending email. Try againg"});
+                return;
+            }            
+            res.status(200).json("Email sent");
+            
+        }catch(error){
+             console.log(error);
+             res.status(500).json({msg:"Internal server error."}); 
+        }finally{
+            if(conn) conn.end();
+        }
+    }
+
 
     module.exports={
         verifyUser,
         postGetUser,
         insertUser,
+        recoverAccount,
+        verifyRecoveryAccount,
         prueba
     }
