@@ -27,9 +27,9 @@ const pool = mariadb.createPool({
 // Fetch Connection
 async function fetchConn() {
     let conn = await pool.getConnection();
-    console.log("Total connections: ", pool.totalConnections());
-    console.log("Active connections: ", pool.activeConnections());
-    console.log("Idle connections: ", pool.idleConnections());
+    //console.log("Total connections: ", pool.totalConnections());
+    //console.log("Active connections: ", pool.activeConnections());
+    //console.log("Idle connections: ", pool.idleConnections());
     return conn;
  }
 

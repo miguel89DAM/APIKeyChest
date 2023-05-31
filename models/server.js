@@ -5,10 +5,12 @@ const fs = require('fs');
 //Requerir paquete https
 const https= require("https");
 const http= require("http");
+const morgan = require("morgan");
 
 class Server{
     constructor(){
         this.app = express();
+        this.app.use(morgan('common'));
         this.port =process.env.PORT;
 
         this.paths={

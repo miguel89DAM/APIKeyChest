@@ -21,7 +21,6 @@ const newData=async(req=request,res=response)=>{
         const encryptedtData =  encryptData(dataPassword,decryptMasterPassword);
         //Insertar registro
         const resultInsertData=await conn.query(`CALL BKEYCHEST.sp_insert_data(?,?,?,?,?)`,[name,description,encryptedtData,uid,category.id]);
-        console.log(resultInsertData.affectedRows);
         res.status(200).json(resultInsertData.affectedRows);   
     }catch(error){
         res.status(400).json(error);            
