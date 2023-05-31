@@ -7,7 +7,7 @@ const {sendEmail } = require("../nodemailer/nodemailer");
 const prueba =async(req=request, res=response)=>{
     const randomString = generateRandomString(15);
     console.log("Clave maestra en plano: " , randomString);
-    const masterkey =await encryptData(randomString,"Prueba@123");
+    const masterkey = encryptData(randomString,"Prueba@123");
     console.log("Clave maestra cifrada: ",masterkey);
     const masterkeyplain =decryptData(masterkey,"Prueba@123");
     console.log("Clave maestra descifrada: "+masterkeyplain);
@@ -70,7 +70,7 @@ const verifyRecoveryAccount=async(req=request,res=response)=>{
         }
         //Creación de masterPassword
         const randomString = generateRandomString(15);            
-        const masterkey =await encryptData(randomString,passwd);
+        const masterkey = encryptData(randomString,passwd);
         //Actualizacion del usuario en la BD
         const updateUser=await conn.query(`CALL BKEYCHEST.sp_updateUser(?,?,?)`,[email,password,masterkey]);
         //Si la contraseña no se ha modificado retornamos error
@@ -146,7 +146,7 @@ const verifyRecoveryAccount=async(req=request,res=response)=>{
             }
             //Creación de masterPassword
             const randomString = generateRandomString(15);            
-            const masterkey =await encryptData(randomString,passwd);
+            const masterkey = encryptData(randomString,passwd);
             //Inserción del usuario en la BD
             const insertUser=await conn.query(`CALL BKEYCHEST.sp_insert_user(?,?,?)`,[email,password,masterkey]);
             //Si la contraseña se ha creado retornamos el id del usuario               
@@ -178,7 +178,6 @@ const verifyRecoveryAccount=async(req=request,res=response)=>{
      * @returns 
      */
     const recoverAccount=async (req=request,res=response)=>{
-        console.log(req.body)
         const {email="Nobody", passwd="Nopass"}= req.body; 
         let conn;
         try{
@@ -211,11 +210,58 @@ const verifyRecoveryAccount=async(req=request,res=response)=>{
         }
     }
 
+    const updateUser=async (req=request,res=response)=>{
+        const {token="Nobody", email= "no_email",passwd="Nopass",tempPasswd="Nopass"}= req.body; 
+        let conn;
+        try{        
+            const verifyToken = await verifyJWT(token);  
+            const {uid} =verifyToken; 
+            conn = await fetchConn();
+            //Extraer contraseña maestra
+            const responseQuery=await conn.query(`CALL BKEYCHEST.sp_getMasterPasswordByUserId(?)`,[uid]);
+            const {masterpassword}=responseQuery[0][0];
+            //Descifrar contraseña maestra con contraseña del usuario
+            const decryptMasterPassword= decryptData(masterpassword,passwd);
+            //Generar nueva contraseña maestra
+            const randomString = generateRandomString(15);     
+            //Cifrar nueva contraseña maestra       
+            const newMasterkey = encryptData(randomString,tempPasswd);
+            //Extraer datos del usuario de la BD
+            const resultSet=await conn.query(`CALL BKEYCHEST.sp_getDataByUser(?)`,[uid]);
+            //Descifrar datos con contraseña maestra antigua y cifrar datos con la nueva contraseña maestra y actualizar en BD
+            resultSet[0].forEach(async item =>{    
+                const decryptDataPassword=  decryptData(item.dataPassword,decryptMasterPassword);
+                const encryptDataPassword=  encryptData(decryptDataPassword,randomString);        
+                item.dataPassword=encryptDataPassword;
+                const row =await conn.query(`CALL BKEYCHEST.sp_update_data(?,?,?,?,?,?)`,[item.id,item.name,item.description,item.dataPassword,uid,item.id_category]);
+            });
+            //Hashing contraseña usuario            
+            const password = encryptPassword(tempPasswd);
+            if(password === null){
+                res.status(500).json({msg:"Error: Unexpected error. Try again"});
+                return;
+            }
+            //Actualizacion del usuario en la BD
+            const updateUser=await conn.query(`CALL BKEYCHEST.sp_updateUser(?,?,?)`,[email,password,newMasterkey]);
+            //Si la contraseña no se ha modificado retornamos error
+            if(updateUser.affectedRows == 0){
+                res.status(400).json({msg:"Error: The user has not been modificated"});
+                return;
+            }        
+            res.status(200).json(updateUser.affectedRows);
+        }catch(error){
+            res.status(400).json({msg:"Error: "+ error});   
+        }finally{
+            if(conn) conn.end();
+        }
+    }
+
 
     module.exports={
         verifyUser,
         postGetUser,
         insertUser,
+        updateUser,
         recoverAccount,
         verifyRecoveryAccount,
         prueba

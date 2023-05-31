@@ -5,7 +5,7 @@ const { check } = require('express-validator');
 dotenv.config();
 const {validarCampos}=require('../middlewares/validar-campos');
 const{validarEmail}=require('../middlewares/validar-email');
-const {verifyUser,postGetUser,insertUser,recoverAccount,verifyRecoveryAccount,prueba} = require('../controllers/user');
+const {verifyUser,postGetUser,insertUser,updateUser,recoverAccount,verifyRecoveryAccount,prueba} = require('../controllers/user');
 
 
 const router = Router();
@@ -33,6 +33,16 @@ router.post('/newUser',[
     validarCampos
 ],
 insertUser);
+
+router.post('/updateUser',[
+    check('token','The token can\'t be empty').not().isEmpty(),
+    check('email','The email can\'t be empty').not().isEmpty(),
+    check('email','The email is not valid').isEmail(),
+    check('passwd','The password can\'t be empty').not().isEmpty(),
+    check('passwd','The password must be at least 8 caracters').isLength({min:8}),
+    validarCampos
+],
+updateUser);
 
 router.post('/recovery',recoverAccount);
 
