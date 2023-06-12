@@ -12,7 +12,7 @@ async function comparePassword(pas1,pas2){
 function encryptPassword(textPlain){
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(textPlain, salt);
-    return hash;
+    return  hash;
 }
 
 

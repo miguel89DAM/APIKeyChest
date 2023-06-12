@@ -10,9 +10,12 @@ const morgan = require("morgan");
 class Server{
     constructor(){
         this.app = express();
-        this.app.use(morgan('common'));
+        morgan.token('date', (req, res, tz) => {
+            return new Date().toLocaleString('es-ES');
+        })
+        morgan.format('myformat', ':remote-addr - :remote-user [:date] :method :url HTTP/:http-version" :status :res[content-length]');
+        this.app.use(morgan('myformat'));
         this.port =process.env.PORT;
-
         this.paths={
             users: '/users',
             categories: '/categories',

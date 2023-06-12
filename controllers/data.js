@@ -13,14 +13,20 @@ const newData=async(req=request,res=response)=>{
         const {uid} =verifyToken;
         //Extraer contraseña maestra en la BD del usuario
         conn = await fetchConn();
-        const responseQuery=await conn.query(`CALL BKEYCHEST.sp_getMasterPasswordByUserId(?)`,[uid]);
+        const responseQuery=await conn.query(
+            `CALL BKEYCHEST.sp_getMasterPasswordByUserId(?)`,
+            [uid]
+        );
         const {masterpassword}=responseQuery[0][0];
         //Descifrar contraseña maestra con contraseña del usuario
         const decryptMasterPassword= decryptData(masterpassword,user.passwd);
         //Cifrar datos con contraseña maestra
         const encryptedtData =  encryptData(dataPassword,decryptMasterPassword);
         //Insertar registro
-        const resultInsertData=await conn.query(`CALL BKEYCHEST.sp_insert_data(?,?,?,?,?)`,[name,description,encryptedtData,uid,category.id]);
+        const resultInsertData=await conn.query(
+            `CALL BKEYCHEST.sp_insert_data(?,?,?,?,?)`,
+            [name,description,encryptedtData,uid,category.id]
+        );
         res.status(200).json(resultInsertData.affectedRows);   
     }catch(error){
         res.status(400).json(error);            
@@ -41,7 +47,6 @@ const getData=async(req=request,res=response)=>{
         conn = await fetchConn();
         const responseQuery=await conn.query(`CALL BKEYCHEST.sp_getMasterPasswordByUserId(?)`,[uid]);
         const {masterpassword}=responseQuery[0][0];
-        //console.log(masterpassword);
         //Descifrar contraseña maestra con contraseña del usuario
         const decryptMasterPassword= decryptData(masterpassword,user.passwd);        
         //Extraer datos de la BD

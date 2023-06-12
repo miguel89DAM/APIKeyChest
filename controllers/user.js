@@ -78,7 +78,7 @@ const verifyRecoveryAccount=async(req=request,res=response)=>{
             res.status(400).json({msg:"Error: The user has not been modificated"});
             return;
         }
-        res.status(200).json(updateUser.affectedRows);
+        res.status(200).json({msg:"The account has been recovered correctly"});
     }catch(error){
         res.status(500).json({msg:"Error: "+ error.message});   
     }finally{
